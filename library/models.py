@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import MaxLengthValidator
-
+from django.contrib.auth.models import User
 
 # Create your models here.
 class Perpus(models.Model):
@@ -28,17 +28,32 @@ class Buku(models.Model):
 
     def __str__(self):
         return self.judul
+    
+class PengembalianBuku(models.Model):
+    STATUS_CHOICES = [
+        ('belum_dikembalikan', 'Belum Dikembalikan'),
+        ('sudah_dikembalikan', 'Sudah Dikembalikan'),
+        ('hilang', 'Hilang'),
+        ('rusak', 'Rusak'),
+    ]
+    buku = models.ForeignKey(Buku, on_delete=models.CASCADE)
+    pengguna = models.ForeignKey(User, on_delete=models.CASCADE)
+    tanggal_pinjam = models.DateField()
+    tanggal_kembali = models.DateField(null=True, blank=True)
+    tanggal_jatuh_tempo = models.DateField()
+    denda_per_hari = models.DecimalField(max_digits=5, decimal_places=2, default=1.00)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='belum_dikembalikan')
 
-class Peminjaman(models.Model):
-    buku = models.ForeignKey(Buku, on_delete=models.CASCADE,related_name='peminjaman')
-    anggota = models.ForeignKey(Anggota, on_delete=models.CASCADE, related_name='peminjaman_anggota') 
-    tanggal_pinjam = models.DateField(auto_now_add=True)
-    tanggal_pengembalian = models.DateField(null=True, blank=True)
-    denda = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    status = models.CharField(max_length=20, choices=[('Dipinjam', 'Dipinjam'), ('Dikembalikan', 'Dikembalikan')])
+    def hitung_denda(self):
+        if self.status == 'sudah_dikembalikan' and self.tanggal_kembali and self.tanggal_kembali > self.tanggal_jatuh_tempo:
+            delta = self.tanggal_kembali - self.tanggal_jatuh_tempo
+            return delta.days * self.denda_per_hari
+        return 0.00
 
     def _str_(self):
-        return self.buku
+        return f"{self.buku.judul} dipinjam oleh {self.pengguna.user.username}"
+
+
 
 
 

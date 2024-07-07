@@ -5,12 +5,17 @@ from library.models import Anggota
 from library.serializers import AnggotaSerializer
 from library.models import Buku
 from library.serializers import BukuSerializer
-from library.models import Peminjaman
-from library.serializers import PeminjamanSerializer
+# from library.models import Peminjaman
+# from library.serializers import PeminjamanSerializer
+from library.models import PengembalianBuku
+from library.serializers import PengembalianBukuSerializer
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework import viewsets
+from django.contrib.auth.models import User
+from library.serializers import UserSerializer
 
 class PerpusList(generics.ListCreateAPIView):
     queryset = Perpus.objects.all()
@@ -24,10 +29,9 @@ class BukuList(generics.ListCreateAPIView):
     queryset = Buku.objects.all()
     serializer_class = BukuSerializer
 
-class PeminjamanList(generics.ListCreateAPIView):
-    queryset = Peminjaman.objects.all()
-    serializer_class = PeminjamanSerializer
-
+class PengembalianBukuList(generics.ListCreateAPIView):
+    queryset = PengembalianBuku.objects.all()
+    serializer_class = PengembalianBukuSerializer
 
 class BukuDetail(APIView):
     def get_object(self, pk):
@@ -54,28 +58,31 @@ class BukuDetail(APIView):
         buku.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-
-class PeminjamanDetail(APIView):
+class PengembalianBukuDetail(APIView):
     def get_object(self, pk):
         try:
-            return Peminjaman.objects.get(pk=pk)
-        except Peminjaman.DoesNotExist:
+            return PengembalianBuku.objects.get(pk=pk)
+        except PengembalianBuku.DoesNotExist:
             raise Http404
 
     def get(self, request, pk, format=None):
-        peminjaman = self.get_object(pk)
-        serializer = PeminjamanSerializer(peminjaman, context={'request': request})
+        pengembalianbuku = self.get_object(pk)
+        serializer = PengembalianBukuSerializer(pengembalianbuku, context={'request': request})
         return Response(serializer.data)
 
     def put(self, request, pk, format=None):
-        peminjaman = self.get_object(pk)
-        serializer = PeminjamanSerializer(peminjaman, data=request.data)
+        pengembalianbuku = self.get_object(pk)
+        serializer = PengembalianBukuSerializer(pengembalianbuku, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, format=None):
-        peminjaman= self.get_object(pk)
-        peminjaman.delete()
+        pengembalianbuku= self.get_object(pk)
+        pengembalianbuku.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer

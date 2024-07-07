@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import Perpus
 from .models import Anggota
 from .models import Buku
-from .models import Peminjaman
+from .models import PengembalianBuku
+from django.contrib.auth.models import User
 
 class PerpusSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,7 +30,22 @@ class BukuSerializer(serializers.ModelSerializer):
         model = Buku
         fields = ["id", "judul", "kode", "genre", 'peminjaman']
 
-class PeminjamanSerializer(serializers.ModelSerializer):
+class PengembalianBukuSerializer(serializers.ModelSerializer):
+    denda = serializers.SerializerMethodField()
+
     class Meta:
-        model = Peminjaman
-        fields = ["id", "buku", "anggota", "tanggal_pinjam", "tanggal_pengembalian", "denda", "status"]
+        model = PengembalianBuku
+        fields = ["id", "buku", "pengguna", "tanggal_pinjam", "tanggal_kembali", "tanggal_jatuh_tempo", "denda_per_hari", "status", "denda"]
+
+    def get_denda(self, obj):
+        return obj.hitung_denda()
+
+class UserSerializer(serializers.ModelSerializer):
+    pengembalianbuku=serializers.HyperlinkedRelatedField(
+        many=True,
+        read_only=True,
+        view_name='pengembalianbuku-detail'
+    )
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'password', 'pengembalianbuku']
